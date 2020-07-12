@@ -1,0 +1,53 @@
+version: "3"
+services:
+  php:
+    build:
+      args:
+        user: hansb
+        uid: 1000
+        workdir: /app
+      context: ./
+      dockerfile: Dockerfile
+    image: webtoolsdev/laravel-dev:7.4-fpm
+    container_name: webtoolsdev-app
+    depends_on:
+      - db
+      - catcher
+    volumes:
+      - ./:/app:delegated
+    command: "php-fpm"
+    working_dir: "/app"
+    restart: unless-stopped
+  db:
+    image: mysql:5.7
+    container_name: webtoolsdev-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: unless-stopped
+  nginx:
+    image: nginx:latest
+    container_name: webtoolsdev-nginx
+    environment:
+      FASTCGI_READ_TIMEOUT: 3600s
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/app:delegated
+      - ./docker-config/nginx/templates:/etc/nginx/templates
+    restart: unless-stopped
+  catcher:
+    image: schickling/mailcatcher
+    container_name: webtoolsdev-catcher
+    ports:
+      - "1080:1080"
+
+volumes:
+  db-data:
